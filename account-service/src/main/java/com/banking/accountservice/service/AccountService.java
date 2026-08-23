@@ -133,12 +133,12 @@ public class AccountService {
     private String generateAccountNumber() {
         String accountNumber;
 
-        do{
-
+        do {
             long number = secureRandom.nextLong(1_000_000_000_000L);
 
             accountNumber = String.format("%012d", number);
-        }while (accountRepository.existsByAccountnumber(accountNumber));
+
+        } while (accountRepository.existsByAccountNumber(accountNumber));
 
         return accountNumber;
     }
