@@ -98,6 +98,7 @@ public class TransactionEventConsumer {
         }
 
         catch (Exception e){
+            log.error("Error processing fraud check result: {}",e.getMessage());
 
         }
     }
