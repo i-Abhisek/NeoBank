@@ -32,7 +32,7 @@ public class PaymentController {
     // Razorpay webhook endpoint
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
-            @RequestBody Map<String, Object> payload) {
+            @RequestBody Map<String, Object> payload) throws RazorpayException {
 
         paymentService.handleWebhook(payload);
 
