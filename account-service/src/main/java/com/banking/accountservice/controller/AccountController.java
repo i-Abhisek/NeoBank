@@ -59,12 +59,14 @@ public class AccountController {
  *  Called by Transaction Service when transfer is initiated
  */
 
-    public ResponseEntity<String> deductBalance(
-            @PathVariable String accountNumber,
-            @RequestParam BigDecimal amount ){
-        accountService.deductBalance(accountNumber, amount);
-        return ResponseEntity.ok("Balance deducted Successfully");
-    }
+@PutMapping("/{accountNumber}/deduct")
+public ResponseEntity<String> deductBalance(
+        @PathVariable String accountNumber,
+        @RequestParam BigDecimal amount) {
+
+    accountService.deductBalance(accountNumber, amount);
+    return ResponseEntity.ok("Balance deducted Successfully");
+}
 
     /**
      * SAGA STEP 4 - Compensating transaction endpoint
