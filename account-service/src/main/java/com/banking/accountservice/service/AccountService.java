@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -61,6 +62,18 @@ public class AccountService {
     }
 
     /**
+     * Get All Account
+     * @return
+     */
+
+    public List<AccountResponse> getAllAccounts() {
+        return accountRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    /**
      * Get account balance
      * @param accountNumber
      * @return
@@ -98,8 +111,10 @@ public class AccountService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if(account.getStatus() != AccountStatus.ACTIVE){
-            throw new RuntimeException("Account is not active "+accountNumber);
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new RuntimeException(
+                    "Transaction failed. Your account is blocked, so the balance was not debited."
+            );
         }
 
         if(account.getBalance().compareTo(amount) < 0 ){

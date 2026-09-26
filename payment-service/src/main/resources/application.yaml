@@ -18,6 +18,7 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -25,12 +26,19 @@ spring:
 server:
   port: 8083
 
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
 
-#Razorpay Configuration
+# Razorpay Configuration
 razorpay:
-  key-id: rzp_test_TeHpizyaAR2yw3
-  key-secret: InBcY9aL2U1jSoqg1yCnLdac
-  webhook-secret:
+  key-id: rzp_test_TgWVz2MBAXyiOP
+  key-secret: ZJLFepao08vEJDy2763Mko4B
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
 
 management:
   endpoints:

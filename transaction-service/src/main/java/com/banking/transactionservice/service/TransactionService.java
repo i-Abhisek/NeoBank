@@ -107,39 +107,50 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    public TransactionResponse verifyOTP(String transactionID, String otp){
-        log.info("OTP verification for the transaction: {}",transactionID);
+    public TransactionResponse verifyOTP(String transactionID, String otp) {
+        log.info("OTP verification for the transaction: {}", transactionID);
 
         Transaction transaction = transactionRepository.findById(transactionID)
                 .orElseThrow(() -> new RuntimeException(
-                        "Transaction not found" +transactionID
+                        "Transaction not found " + transactionID
                 ));
 
         String otpKey = "verification:otp" + transactionID;
-        String storedOtp =redisTemplate.opsForValue().get(otpKey);
+        String storedOtp = redisTemplate.opsForValue().get(otpKey);
 
-        if(storedOtp == null){
-            //OTP EXPIRED
-            log.warn("OTP expired for transaction:{}", transactionID);
-            compensateTransaction(transaction, "OTP expired - transaction cancelled and amount refund");
+        if (storedOtp == null) {
+            // OTP EXPIRED
+            log.warn("OTP expired for transaction: {}", transactionID);
+
+            compensateTransaction(
+                    transaction,
+                    "OTP expired - transaction cancelled and amount refund"
+            );
+
             return mapToResponse(transaction);
         }
 
-        if(storedOtp.equals(otp)){
-            // BLOCK ACCOUNT AND REFUND
+        // WRONG OTP
+        if (!storedOtp.equals(otp)) {
             log.warn("Wrong OTP - blocking account and refunding: {}", transactionID);
+
             redisTemplate.delete(otpKey);
-            blockAccountAndCompensate(transaction,
-                    "Wrong OTP entered - transaction cancelled,"+
-                    "account blocked for security");
+
+            blockAccountAndCompensate(
+                    transaction,
+                    "Wrong OTP entered - transaction cancelled, account blocked for security"
+            );
 
             return mapToResponse(transaction);
-
         }
-        // OTP correct - complete transaction
+
+        // CORRECT OTP
         log.info("OTP verified - completing transaction: {}", transactionID);
+
         redisTemplate.delete(otpKey);
+
         completeTransaction(transaction);
+
         return mapToResponse(transaction);
     }
 
@@ -209,19 +220,22 @@ public class TransactionService {
                transaction.getId());
    }
 
-   public void processCleanResult (String transactionID){
+    public void processCleanResult(String transactionID) {
         Transaction transaction = transactionRepository.findById(transactionID)
-                .orElseThrow(() -> new RuntimeException(
-                        "Transaction not found" +transactionID
-                ));
+                .orElseThrow(() ->
+                        new RuntimeException("Transaction not found: " + transactionID)
+                );
 
-       if(transaction.getStatus() != TransactionStatus.PROCESSING){
-           log.warn("Transaction {} not PROCESSING -skipping", transactionID);
-           return;
-       }
+        if (transaction.getStatus() != TransactionStatus.PROCESSING) {
+            log.warn("Transaction {} not PROCESSING - skipping", transactionID);
+            return;
+        }
 
-       completeTransaction(transaction);
-   }
+        log.info(
+                "Fraud check CLEAN for transaction {}. Waiting for OTP verification.",
+                transactionID
+        );
+    }
 
     private TransactionResponse mapToResponse(Transaction transaction){
         TransactionResponse response = new TransactionResponse();

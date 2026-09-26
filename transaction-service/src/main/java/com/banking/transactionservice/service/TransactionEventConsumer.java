@@ -58,15 +58,19 @@ public class TransactionEventConsumer {
             String otp = String.format("%06d", (int)(Math.random() * 900000) + 100000);
 
              // Store OTP in Redis - expires in 5 min
-            String otpkey = "verification" + transactionId;
+            String otpkey = "verification:otp" + transactionId;
             redisTemplate.opsForValue().set(otpkey,otp,OTP_EXPIRY_MINUTES, TimeUnit.MINUTES);
 
             // Update Status
             transaction.setStatus(TransactionStatus.PENDING_VERIFICATION);
             transactionRepository.save(transaction);
 
-            log.info("OTP generated for transaction: {} expires in {} min",
-                    transactionId, OTP_EXPIRY_MINUTES);
+            log.info(
+                    "OTP generated for transaction: {} | OTP: {} | expires in {} min",
+                    transactionId,
+                    otp,
+                    OTP_EXPIRY_MINUTES
+            );
 
             // Notify user
 
@@ -87,19 +91,35 @@ public class TransactionEventConsumer {
 
     }
 
-    @KafkaListener(topics = "fraud.check.clear")
+    @KafkaListener(topics = "fraud.check.clean")
     public void consumeFraudCheckCleanResult(
-            @Payload Map<String, Object> payload){
+            @Payload Map<String, Object> payload) {
 
-        try{
+        try {
 
             String transactionId = (String) payload.get("transactionId");
+
             transactionService.processCleanResult(transactionId);
-        }
 
-        catch (Exception e){
-            log.error("Error processing fraud check result: {}",e.getMessage());
+            Map<String, Object> verificationEvent = new HashMap<>();
+            verificationEvent.put("transactionId", transactionId);
+            verificationEvent.put("accountNumber", payload.get("accountNumber"));
+            verificationEvent.put("reason", "Fraud check CLEAN - OTP verification required");
+            verificationEvent.put("amount", payload.get("amount"));
 
+            kafkaTemplate.send(
+                    "verification.required",
+                    transactionId,
+                    verificationEvent
+            );
+
+            log.info(
+                    "Verification required event sent for transaction: {}",
+                    transactionId
+            );
+
+        } catch (Exception e) {
+            log.error("Error processing fraud check result: {}", e.getMessage(), e);
         }
     }
 
