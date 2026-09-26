@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/accounts")
@@ -26,6 +27,11 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(accountService.createAccount(createAccountRequest));
 
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AccountResponse>> getAllAccounts() {
+        return ResponseEntity.ok(accountService.getAllAccounts());
     }
 
 
@@ -59,12 +65,14 @@ public class AccountController {
  *  Called by Transaction Service when transfer is initiated
  */
 
-    public ResponseEntity<String> deductBalance(
-            @PathVariable String accountNumber,
-            @RequestParam BigDecimal amount ){
-        accountService.deductBalance(accountNumber, amount);
-        return ResponseEntity.ok("Balance deducted Successfully");
-    }
+@PutMapping("/{accountNumber}/deduct")
+public ResponseEntity<String> deductBalance(
+        @PathVariable String accountNumber,
+        @RequestParam BigDecimal amount) {
+
+    accountService.deductBalance(accountNumber, amount);
+    return ResponseEntity.ok("Balance deducted Successfully");
+}
 
     /**
      * SAGA STEP 4 - Compensating transaction endpoint
